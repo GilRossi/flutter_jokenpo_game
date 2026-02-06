@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
 import 'dart:math';
-
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 
 class Jogo extends StatefulWidget {
   const Jogo({super.key});
@@ -11,112 +9,154 @@ class Jogo extends StatefulWidget {
 }
 
 class _JogoState extends State<Jogo> {
+  static const _opcoes = ["pedra", "papel", "tesoura"];
 
-  var _imagemApp = AssetImage("images/padrao.png");
-  var _mensagem = "Escolha uma opção abaixo";
+  String _mensagem = "Escolha uma opção abaixo";
+  String _escolhaApp = "padrao";
 
-  void _opcaoSelecionada (String escolhaUsuario){
-    var opcao = ["pedra", "papel", "tesoura"];
-    var sorteio = Random().nextInt(opcao.length);
-    var escolhaApp = opcao[sorteio];
-    
-    switch(escolhaApp){
-      case "pedra":
-        setState(() {
-          this._imagemApp = AssetImage("images/pedra.png");
-        });
-        break;
-      case "papel":
-        setState(() {
-          this._imagemApp = AssetImage("images/papel.png");
-        });
-        break;
-      case "tesoura":
-        setState(() {
-          this._imagemApp = AssetImage("images/tesoura.png");
-        });
-        break;
+  void _jogar(String escolhaUsuario) {
+    final escolhaApp = _opcoes[Random().nextInt(_opcoes.length)];
+
+    setState(() {
+      _escolhaApp = escolhaApp;
+      _mensagem = _resultado(escolhaUsuario, escolhaApp);
+    });
+  }
+
+  String _resultado(String usuario, String app) {
+    if (usuario == app) return "Empate 😄";
+
+    if ((usuario == "pedra" && app == "tesoura") ||
+        (usuario == "papel" && app == "pedra") ||
+        (usuario == "tesoura" && app == "papel")) {
+      return "Parabéns! Você ganhou 🎉";
     }
 
-    if(
-      (escolhaUsuario == "pedra" && escolhaApp == "tesoura") ||
-      (escolhaUsuario == "papel" && escolhaApp == "pedra") ||
-      (escolhaUsuario == "tesoura" && escolhaApp == "papel")
-    ){
-      setState(() {
-        this._mensagem = "Parabéns! Você ganhou! :)";
-      });
-
-    }else if(
-      (escolhaApp == "pedra" && escolhaUsuario == "tesoura") ||
-      (escolhaApp == "papel" && escolhaUsuario == "pedra") ||
-      (escolhaApp == "tesoura" && escolhaUsuario == "papel")
-    ){
-      setState(() {
-        this._mensagem = "Você perdeu! :(";
-      });
-    }else{
-      setState(() {
-        this._mensagem = "Tente denovo, empatou! ;)";
-      });
-    }
+    return "Você perdeu 😢";
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: const Text("JokenPo"),
         backgroundColor: Colors.amberAccent,
-        title: Text("JokenPo"),
+        centerTitle: true,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: 32, bottom: 16),
-          child: Text(
-            "Escolha do App",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold
-            ),
-          ),
-          ),
-          Image(image: this._imagemApp,),
-          Padding(
-            padding: EdgeInsets.only(top: 32, bottom: 16),
-            child: Text(
-              this._mensagem,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.center,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isPortrait =
+                constraints.maxHeight > constraints.maxWidth;
+
+            return isPortrait
+                ? _portraitLayout()
+                : _landscapeLayout();
+          },
+        ),
+      ),
+    );
+  }
+
+  // 📱 PORTRAIT
+  Widget _portraitLayout() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+
+        _titulo(),
+        const SizedBox(height: 16),
+
+        _imagemApp(),
+        const SizedBox(height: 16),
+
+        _mensagemWidget(),
+        const SizedBox(height: 16),
+
+        _botoes(),
+      ],
+    );
+  }
+
+
+  // 📱 LANDSCAPE (AGORA CORRETO)
+  Widget _landscapeLayout() {
+    return Row(
+      children: [
+        // 👈 COLUNA ESQUERDA (APP)
+        Expanded(
+          flex: 5,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              GestureDetector(
-                onTap: ()=> _opcaoSelecionada("pedra"),
-                child: Image.asset("images/pedra.png", height: 95,),
-              ),
-              GestureDetector(
-                onTap: ()=> _opcaoSelecionada("papel"),
-                child: Image.asset("images/papel.png", height: 95,),
-              ),
-              GestureDetector(
-                onTap: () => _opcaoSelecionada("tesoura"),
-                child: Image.asset("images/tesoura.png",height: 95,),
-              ),
-              // Image.asset("images/pedra.png", height: 95,),
-              // Image.asset("images/papel.png", height: 95,),
-              // Image.asset("images/tesoura.png",height: 95,),
+              _titulo(),
+              const SizedBox(height: 16),
+              _imagemApp(),
             ],
           ),
-        ],
+        ),
+
+        // 👉 COLUNA DIREITA (USUÁRIO)
+        Expanded(
+          flex: 5,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _mensagemWidget(),
+              const SizedBox(height: 16),
+              _botoes(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 🔹 COMPONENTES
+
+  Widget _titulo() {
+    return const Text(
+      "Escolha do App",
+      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _imagemApp() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: Image.asset(
+        "images/$_escolhaApp.png",
+        key: ValueKey(_escolhaApp),
+        width: 180,
+      ),
+    );
+  }
+
+  Widget _mensagemWidget() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Text(
+        _mensagem,
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 18),
+      ),
+    );
+  }
+
+  Widget _botoes() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: _opcoes.map(_botaoOpcao).toList(),
+    );
+  }
+
+  Widget _botaoOpcao(String opcao) {
+    return GestureDetector(
+      onTap: () => _jogar(opcao),
+      child: Image.asset(
+        "images/$opcao.png",
+        width: 80,
       ),
     );
   }
